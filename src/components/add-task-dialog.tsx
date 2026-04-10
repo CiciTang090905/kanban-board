@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,17 +12,18 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { addTask } from "@/store/task-store";
 
 function AddTaskDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  const createTask = useMutation(api.tasks.create); //useMutation hook to get a function that calls the create mutation defined in convex/tasks.ts
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    addTask(title.trim(), description.trim());
+    createTask({ title: title.trim(), description: description.trim() });
     setTitle("");
     setDescription("");
     setOpen(false);
