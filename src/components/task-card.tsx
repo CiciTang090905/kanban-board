@@ -1,92 +1,104 @@
-import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { useQuery, useMutation } from "convex/react";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Doc, Id } from "../../convex/_generated/dataModel";
-import Column from "@/components/column";
-import TaskCard from "@/components/task-card";
-import AddTaskDialog from "@/components/add-task-dialog";
+import type { Doc } from "../../convex/_generated/dataModel";
 
-type TaskStatus = "todo" | "in-progress" | "done";
+type TaskCardProps = {
+  task: Doc<"tasks">;
+  isOverlay?: boolean;
+};
 
-const COLUMNS: { title: string; status: TaskStatus }[] = [
-  { title: "To Do", status: "todo" },
-  { title: "In Progress", status: "in-progress" },
-  { title: "Done", status: "done" },
-];
-
-function KanbanBoard() {
-  const tasks = useQuery(api.tasks.list);
+function TaskCard({ task, isOverlay }: TaskCardProps) {
   const updateStatus = useMutation(api.tasks.updateStatus);
-  const [activeTask, setActiveTask] = useState<Doc<"tasks"> | null>(null);
+  const removeTask = useMutation(api.tasks.remove);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-  );
-
-  function handleDragStart(event: DragStartEvent) {
-    const task = tasks?.find((t) => t._id === event.active.id);
-    setActiveTask(task ?? null);
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over) {
-      setActiveTask(null);
-      return;
-    }
-
-    const taskId = active.id as Id<"tasks">;
-    const newStatus = over.id as TaskStatus;
-    const task = tasks?.find((t) => t._id === taskId);
-
-    if (task && task.status !== newStatus) {
-      updateStatus({ id: taskId, status: newStatus });
-    }
-
-    setActiveTask(null);
-  }
-
-  if (tasks === undefined) {
-    return <p className="text-muted-foreground">Loading tasks...</p>;
-  }
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: task._id,
+    disabled: isOverlay,
+  });
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+    <Card
+      ref={isOverlay ? undefined : setNodeRef}
+      className={`transition-shadow hover:shadow-md ${isDragging ? "opacity-0" : ""} ${isOverlay ? "shadow-lg ring-2 ring-primary opacity-100" : ""}`}
     >
-      <div>
-        <div className="mb-6 flex justify-end">
-          <AddTaskDialog />
-        </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {COLUMNS.map((column) => (
-            <Column
-              key={column.status}
-              title={column.title}
-              status={column.status}
-              tasks={tasks.filter((task) => task.status === column.status)}
-            />
-          ))}
-        </div>
-      </div>
-      <DragOverlay>
-        {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
-      </DragOverlay>
-    </DndContext>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <CardTitle
+          className="flex-1 cursor-grab text-sm font-medium leading-snug active:cursor-grabbing"
+          {...listeners}
+          {...attributes}
+        >
+          {task.title}
+        </CardTitle>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {task.status !== "todo" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  updateStatus({ id: task._id, status: "todo" })
+                }
+              >
+                Move to To Do
+              </DropdownMenuItem>
+            )}
+            {task.status !== "in-progress" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  updateStatus({ id: task._id, status: "in-progress" })
+                }
+              >
+                Move to In Progress
+              </DropdownMenuItem>
+            )}
+            {task.status !== "done" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  updateStatus({ id: task._id, status: "done" })
+                }
+              >
+                Move to Done
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => removeTask({ id: task._id })}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardHeader>
+      {task.description && (
+        <CardContent>
+          <p className="line-clamp-2 text-sm text-muted-foreground">
+            {task.description}
+          </p>
+        </CardContent>
+      )}
+    </Card>
   );
 }
 
-export default KanbanBoard;
+export default TaskCard;
