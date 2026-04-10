@@ -66,6 +66,8 @@ export const taskStore = createStore<Task[]>(loadTasks());
 taskStore.subscribe(() => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(taskStore.state));
 });
+//instead of using saveTasks function, one subscription handles persistence for all current and future mutations.
+//every time that state changes, it persists the latest value 
 
 export function addTask(title: string, description: string) {
   taskStore.setState((prev) => [
