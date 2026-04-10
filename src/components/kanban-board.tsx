@@ -29,13 +29,7 @@ function KanbanBoard() {
             key={column.status}
             title={column.title}
             status={column.status}
-            tasks={tasks.filter((task) => task.status === column.status).map((task) => ({
-              id: task._id,
-              createdAt: task._creationTime,
-              title: task.title,
-              description: task.description,
-              status: task.status,
-            }))}
+            tasks={tasks.filter((task) => task.status === column.status)}
           />
         ))}
       </div>

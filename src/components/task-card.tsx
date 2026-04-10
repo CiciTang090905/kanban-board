@@ -1,5 +1,10 @@
 import { MoreHorizontal, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { moveTask, deleteTask, type Task } from "@/store/task-store";
+import type { Doc } from "../../convex/_generated/dataModel";
 
 type TaskCardProps = {
-  task: Task;
+  task: Doc<"tasks">;
 };
 
 function TaskCard({ task }: TaskCardProps) {
@@ -29,27 +34,16 @@ function TaskCard({ task }: TaskCardProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {task.status !== "todo" && (
-              <DropdownMenuItem onClick={() => moveTask(task.id, "todo")}>
-                Move to To Do
-              </DropdownMenuItem>
+              <DropdownMenuItem>Move to To Do</DropdownMenuItem>
             )}
             {task.status !== "in-progress" && (
-              <DropdownMenuItem
-                onClick={() => moveTask(task.id, "in-progress")}
-              >
-                Move to In Progress
-              </DropdownMenuItem>
+              <DropdownMenuItem>Move to In Progress</DropdownMenuItem>
             )}
             {task.status !== "done" && (
-              <DropdownMenuItem onClick={() => moveTask(task.id, "done")}>
-                Move to Done
-              </DropdownMenuItem>
+              <DropdownMenuItem>Move to Done</DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => deleteTask(task.id)}
-            >
+            <DropdownMenuItem className="text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
